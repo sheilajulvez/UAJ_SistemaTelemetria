@@ -12,7 +12,10 @@ public enum EventType
     LevelEnd,
     LevelProgress,
     Jump,
-    Death
+    Death,
+    BlueSlime,
+    Pause,
+    FallPlatform
 }
 
 public enum TrackerEventType
@@ -85,6 +88,7 @@ public class Tracker : MonoBehaviour
     private void OnApplicationQuit()
     {
         Debug.Log("Se está cerrando la aplicación.");
+
         persistence.StopProcessing();
     }
 
@@ -109,12 +113,12 @@ public class Tracker : MonoBehaviour
         TrackEvent(new TrackerEvent(EventType.SessionStart.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
     }
 
-    public void TrackSessionEndEvent(string sessionId, string endTime)
+    public void TrackSessionEndEvent(string sessionId)
     {
         var data = new Dictionary<string, object>
         {
             { "session_id", sessionId },
-            { "end_time", endTime }
+            { "end_time", System.DateTime.Now.ToString("o") }
         };
 
         TrackEvent(new TrackerEvent(EventType.SessionEnd.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
@@ -158,9 +162,9 @@ public class Tracker : MonoBehaviour
     }
     // Eventos del Juego (AmonRA)
 
-    
 
-   
+
+
 
     public void TrackLevelProgress(string levelId, string deathnumber1, string deathnumber2, string deathnumber3)
     {
@@ -175,9 +179,56 @@ public class Tracker : MonoBehaviour
         Tracker.Instance.TrackEvent(new TrackerEvent(EventType.LevelProgress.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
     }
 
-  
+    public void TrackJump()
+    {
+        var data = new Dictionary<string, object>
+    {
+        { "session_id", sessionId },
+        { "jump_time", System.DateTime.Now.ToString("o") }
+    };
 
-   
+        TrackEvent(new TrackerEvent(EventType.Jump.ToString(), TrackerEventType.ResourceTracker.ToString(), data));
+    }
+
+    public void TrackBlueSlime( float position)
+    {
+        var data = new Dictionary<string, object>
+    {
+        { "level_id", 1 },
+        { "position_x", position.ToString() }
+    };
+
+        TrackEvent(new TrackerEvent(EventType.BlueSlime.ToString(), TrackerEventType.ResourceTracker.ToString(), data));
+    }
+    public void TrackFallPlatform(string levelId, float position)
+    {
+        var data = new Dictionary<string, object>
+    {
+        { "level_id", levelId },
+        { "position_x", position.ToString() }
+    };
+
+        TrackEvent(new TrackerEvent(EventType.FallPlatform.ToString(), TrackerEventType.ResourceTracker.ToString(), data));
+    }
+
+    public void TrackPause(string levelId, int npause)
+    {
+        var data = new Dictionary<string, object>
+    {
+        { "level_id", levelId },
+         {"number_of_times_pauses_game",npause.ToString() }
+       
+           
+    };
+
+        TrackEvent(new TrackerEvent(EventType.Pause.ToString(), TrackerEventType.ResourceTracker.ToString(), data));
+    }
+
+
+
+
+
+
 
 
 
