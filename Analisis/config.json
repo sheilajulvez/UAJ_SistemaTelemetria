@@ -1,0 +1,7 @@
+{
+    "carpeta" : "trazas_json",
+    "min_saltos": 10,
+    "max_saltos": 200,
+    "tiempo_nivel_rapido": 10,
+    "tiempo_nivel_lento": 60
+}
