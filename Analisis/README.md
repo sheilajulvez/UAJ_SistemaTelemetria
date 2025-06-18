@@ -24,7 +24,6 @@ Este proyecto analiza los archivos de trazas generados por un videojuego instrum
    Esto hará lo siguiente automáticamente:
    - Instalará las dependencias necesarias (como `pandas`).
    - Ejecutará el análisis sobre los archivos de trazas.
-   - Guardará resultados en archivos `.csv`
 
 ---
 
@@ -37,5 +36,8 @@ Este proyecto analiza los archivos de trazas generados por un videojuego instrum
 
 - Si el problema persiste, asegúrate de tener Python instalado desde [https://www.python.org](https://www.python.org)
 - Durante la instalación, activa la casilla **“Add Python to PATH”**
+
+### config.json
+Archivo de configuración sobre los valores del análisis. Debería hacerse un estudio para establecer estos valores, para así medir con precisión y de manera realista el resultado del análisis.
 
 ---

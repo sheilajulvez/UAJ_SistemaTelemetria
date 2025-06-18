@@ -11,7 +11,7 @@ def cargar_multiples_trazas(carpeta):
             ruta = os.path.join(carpeta, archivo)
             with open(ruta, 'r', encoding='utf-8') as file:
                 lineas = file.readlines()
-                datos = [json.loads(linea) for linea in lineas]
+                datos = [json.loads(linea) for linea in lineas if linea.strip()]
                 df = pd.DataFrame(datos)
                 df['archivo'] = archivo
                 df['session_id'] = session_id
@@ -20,20 +20,20 @@ def cargar_multiples_trazas(carpeta):
     return pd.concat(dataframes, ignore_index=True)
 
 def analizar(df):
-    print(df)
     df['event_timestamp'] = pd.to_datetime(df['event_timestamp'], errors='coerce', utc=True)
 
     print("Conteo de eventos:")
     conteos = df['event_type'].value_counts()
     print(conteos)
-    conteos.to_csv("eventos_conteo.csv")
+
+    print(f"\n---\n")
 
 
     numero_de_sesiones = len(df[df['event_type'] == 'SessionStart'])
 
 
     saltos = df[df['event_type'] == 'Jump']
-    print(f"\nTotal de saltos: {len(saltos)}")
+    print(f"Total de saltos: {len(saltos)}")
     if (len(saltos) / numero_de_sesiones) < config["min_saltos"]:
         print('Pocos saltos: puede indicar falta de interacciones.')
     elif (len(saltos) / numero_de_sesiones) > config["max_saltos"]:
@@ -42,30 +42,34 @@ def analizar(df):
         print('Cantidad moderada de saltos: ritmo de juego equilibrado.')
 
 
+    print(f"\n---\n")
+
+
     muertes = df[df['event_type'] == 'Death']
-    print(f"\nTotal de muertes: {len(muertes)}")
+    print(f"Total de muertes: {len(muertes)}")
     if not muertes.empty and 'death_type' in muertes:
         print(muertes['death_type'].value_counts())
     if len(muertes) == 0:
         print('¡No hubo muertes! El nivel puede ser demasiado fácil.')
-    elif muertes['death_type'].value_counts().max() > 10:
+    elif muertes['death_type'].value_counts().max() > config["max_muertes"]:
         print('Hay una causa de muerte predominante que conviene revisar.')
     else:
         print('Distribución equilibrada de causas de muerte.')
 
 
+    print(f"\n---\n") 
+
 
     level_end = df[df['event_type'] == 'LevelEnd'].copy()
     if not level_end.empty:
-        if 'time' in level_end:
-            level_end['tiempo_nivel_segundos'] = (
-                level_end['time'].str.replace(",", ".", regex=False).astype(float)
+        if 'level_time' in level_end:
+            level_end['level_time'] = (
+                level_end['level_time'].str.replace(",", ".", regex=False).astype(float)
             )
-            print("\nDuración por nivel:")
-            print(level_end[['level_id', 'tiempo_nivel_segundos']].dropna())
-            level_end[['level_id', 'tiempo_nivel_segundos']].to_csv("niveles_duracion.csv", index=False)
-        if not level_end['tiempo_nivel_segundos'].dropna().empty:
-            promedio = level_end['tiempo_nivel_segundos'].mean()
+            print("Duración por nivel:")
+            print(level_end[['level_id', 'level_time']].dropna())
+        if not level_end['level_time'].dropna().empty:
+            promedio = level_end['level_time'].mean()
             print(f"Duración media por nivel: {promedio:.2f} segundos")
             if promedio < config["tiempo_nivel_rapido"]:
                 print('🟢 Los niveles se están completando muy rápido.')
@@ -76,10 +80,11 @@ def analizar(df):
         else:
             print("No hay datos suficientes para calcular la duración promedio por nivel.")
     else:
-        print("\n⛔ No se completó ni un solo nivel.")
+        print("⛔ No se completó ni un solo nivel.")
 
 
-
+    print(f"\n---\n")
+          
     if numero_de_sesiones > 0:
         duraciones = []
 
@@ -88,16 +93,18 @@ def analizar(df):
             fin = grupo['event_timestamp'].max()
             duracion = (fin - inicio).total_seconds()
             duraciones.append(duracion)
-            print(f"\nTiempo jugado en sesión {session_id}: {duracion:.2f} segundos")
+            print(f"Tiempo jugado en sesión {session_id}: {duracion:.2f} segundos")
 
         if duraciones:
             promedio = sum(duraciones) / len(duraciones)
-            print(f"\nTiempo promedio por sesión: {promedio:.2f} segundos")
+            print(f"Tiempo promedio por sesión: {promedio:.2f} segundos")
     else:
-        print("\nNo hay datos válidos para calcular duración de sesiones.")
+        print("No hay datos válidos para calcular duración de sesiones.")
 
 
 if __name__ == "__main__":
+    print(f"\n---\n")
+    
     with open("config.json", "r", encoding="utf-8") as f:
         config = json.load(f)
     carpeta = config["carpeta"]
