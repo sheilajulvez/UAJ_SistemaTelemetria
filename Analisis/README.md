@@ -17,9 +17,7 @@ Este proyecto analiza los archivos de trazas generados por un videojuego instrum
 
 2. Cada .json es una sesión medida, es decir, solo puede haber un solo evento de SessionStart y SessionEnd por cada .json. No debes juntar varios json en uno solo.
 
-3. **Si puedes ejecutar py en consola**  
-
-4. **Haz doble clic** en el archivo `run_analysis_py.bat` o `run_analysis_python.bat` (según tengas configurado en tu ordenador (`py --version` o `python --version`)).
+3. **Haz doble clic** en el archivo `run_analysis_py.bat` o `run_analysis_python.bat` (según tengas configurado en tu ordenador (`py --version` o `python --version`)).
 
    Esto hará lo siguiente automáticamente:
    - Instalará las dependencias necesarias (como `pandas`).
