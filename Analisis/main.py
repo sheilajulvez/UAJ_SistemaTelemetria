@@ -61,26 +61,43 @@ def analizar(df):
 
 
     level_end = df[df['event_type'] == 'LevelEnd'].copy()
+
     if not level_end.empty:
-        if 'level_time' in level_end:
-            level_end['level_time'] = (
-                level_end['level_time'].str.replace(",", ".", regex=False).astype(float)
-            )
-            print("Duración por nivel:")
-            print(level_end[['level_id', 'level_time']].dropna())
-        if not level_end['level_time'].dropna().empty:
-            promedio = level_end['level_time'].mean()
-            print(f"Duración media por nivel: {promedio:.2f} segundos")
-            if promedio < config["tiempo_nivel_rapido"]:
-                print('🟢 Los niveles se están completando muy rápido.')
-            elif promedio > config["tiempo_nivel_lento"]:
-                print('🔴 Los niveles tardan demasiado en completarse.')
+        if 'session_id' in level_end.columns:
+            tiempos_por_sesion = []
+
+            for session_id, grupo in level_end.groupby('session_id'):
+                grupo = grupo.copy()
+
+                # Convertir level_time a float si es string
+                if grupo['level_time'].dtype == 'object':
+                    grupo['level_time'] = grupo['level_time'].str.replace(",", ".", regex=False).astype(float)
+
+                if not grupo['level_time'].dropna().empty:
+                    tiempo_total = grupo['level_time'].max()
+                    niveles_completados = grupo.shape[0]
+                    promedio_sesion = tiempo_total / niveles_completados
+                    tiempos_por_sesion.append(promedio_sesion)
+
+                    print(f"Sesión {session_id}: {niveles_completados} niveles, {tiempo_total:.2f}s totales → promedio: {promedio_sesion:.2f}s")
+
+            if tiempos_por_sesion:
+                promedio_general = sum(tiempos_por_sesion) / len(tiempos_por_sesion)
+                print(f"\nDuración media por nivel: {promedio_general:.2f} segundos")
+
+                if promedio_general < config["tiempo_nivel_rapido"]:
+                    print('Los niveles se están completando muy rápido.')
+                elif promedio_general > config["tiempo_nivel_lento"]:
+                    print('Los niveles tardan demasiado en completarse.')
+                else:
+                    print('Tiempo adecuado para mantener atención y reto.')
             else:
-                print('🟡 Tiempo adecuado para mantener atención y reto.')
+                print("No hay datos suficientes para calcular el promedio general.")
         else:
-            print("No hay datos suficientes para calcular la duración promedio por nivel.")
+            print("Falta la columna 'session_id' para calcular duración por sesión.")
     else:
-        print("⛔ No se completó ni un solo nivel.")
+        print("No se completó ni un solo nivel.")
+
 
 
     print(f"\n---\n")
