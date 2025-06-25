@@ -22,6 +22,7 @@ Este proyecto analiza los archivos de trazas generados por un videojuego instrum
    Esto hará lo siguiente automáticamente:
    - Instalará las dependencias necesarias (como `pandas`).
    - Ejecutará el análisis sobre los archivos de trazas.
+   - Autogenerará un documento informe_resultados.docx
 
 ---
 

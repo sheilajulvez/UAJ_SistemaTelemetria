@@ -1,6 +1,14 @@
 import pandas as pd
 import json
 import os
+import io
+import sys
+from docx import Document
+
+# Para escribir en un buffer y luego volcarlo en el documento
+buffer = io.StringIO()
+sys.stdout = buffer
+
 
 def cargar_multiples_trazas(carpeta):
     dataframes = []
@@ -127,3 +135,13 @@ if __name__ == "__main__":
     carpeta = config["carpeta"]
     df = cargar_multiples_trazas(carpeta)
     analizar(df)
+    
+    sys.stdout = sys.__stdout__
+    contenido = buffer.getvalue()
+
+    doc = Document()
+    doc.add_heading("Informe automático de análisis – AMONRA", level=1)
+    doc.add_paragraph(contenido)
+    doc.save("informe_resultados.docx")
+
+    print("\n✅ Se ha guardado un informe en 'informe_resultados.docx'\n")
