@@ -7,9 +7,9 @@ public class TrackerEvent
     public string trackerName;
     public string eventName;
     public Dictionary<string, object> parameters;
-    private const string EVENT_VERSION = "1.0";
-    private const string APP_NAME = "MiJuego";
-    private const string APP_VERSION = "0.1a";
+    private const string EVENT_VERSION = "1.1";
+    private const string APP_NAME = "AMONRA";
+    private const string APP_VERSION = "1.1";
     private const string CLIENT_ID = "jugador_desconocido"; // Puedes sobreescribirlo
 
     public TrackerEvent(string eventName, string trackerName, Dictionary<string, object> extraParameters)
@@ -33,8 +33,5 @@ public class TrackerEvent
 
     }
 
-    public void SendEvent()
-    {
-        Analytics.CustomEvent(eventName, parameters);
-    }
+
 }

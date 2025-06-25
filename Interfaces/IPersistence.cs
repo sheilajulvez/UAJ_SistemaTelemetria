@@ -4,7 +4,7 @@ using System.Threading;
 
 public interface IPersistence
 {
-    void Enqueue(string serializedEvent);
+    void Enqueue(TrackerEvent evt);
     void StartProcessing();
     void StopProcessing();
 }

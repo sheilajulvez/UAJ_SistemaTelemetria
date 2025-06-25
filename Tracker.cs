@@ -4,102 +4,61 @@ using UnityEngine.Timeline;
 using Newtonsoft.Json.Linq;
 using System.IO;
 
-public enum EventType
-{
-    SessionStart,
-    SessionEnd
-}
 
-public enum TrackerEventType
-{
-    ProgressionTracker,
-    ResourceTracker
-}
 
-public class Tracker : MonoBehaviour
+public class Tracker 
 {
-    public static Tracker Instance { get; private set; }
+    public static Tracker Instance { get; private set; } = new Tracker();
 
-    public ISerializer serializer;
-    public IPersistence persistence;
+    public ISerializer serializer ;
+    public IPersistence persistence ;
+    private float StartTime;
+    private float levelstart;
+   
     Dictionary<string, bool> trackerMap = new Dictionary<string, bool>(); // Este mapa haría la función de un ITrackerAsset para saber como se agrupan los eventos y aceptarlos o no segun el archivo de configuracion
     private string sessionId;
-    public string GetSessionId()
+
+    public string GetSessionId() => sessionId;
+
+    public void Initialize(ISerializer serializer, IPersistence persistence, Dictionary<string, bool> trackerMap)
     {
-        return sessionId;
-    }
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-
-            serializer = new JsonSerializer();
-            persistence = new FilePersistence("guardado.json");
-
-            string path = Path.Combine(Application.dataPath, "Telemetria\\conf.json");
-            string json = File.ReadAllText(path);
-            JObject config = JObject.Parse(json);
-            sessionId = System.Guid.NewGuid().ToString();
-            JObject trackers = config["trackers"] as JObject;
-
-            if (trackers != null)
-            {
-                foreach (var pair in trackers)
-                {
-                    string key = pair.Key;
-                    bool value = pair.Value?.Value<bool>() ?? false;
-
-                    trackerMap[key] = value;
-
-                    Debug.Log(key);
-                }
-            }
-            else
-            {
-                Debug.LogError("No se encontró el objeto 'trackers' en el JSON.");
-            }
-
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+       
+        this.serializer = serializer;
+        this.persistence = persistence;
+      
+        this.trackerMap = trackerMap;
+        this.sessionId = System.Guid.NewGuid().ToString();
     }
 
-    private void Start()
+    public void Stop()
     {
+        persistence.StopProcessing();
+    }
+    public void Start()
+    {
+        Debug.Log("START");
         persistence.StartProcessing();
     }
 
-    private void OnDestroy()
-    {
-        persistence.StopProcessing();
-    }
-    private void OnApplicationQuit()
-    {
-        Debug.Log("Se está cerrando la aplicación.");
-
-        persistence.StopProcessing();
-    }
+   
 
     public void TrackEvent(TrackerEvent eventToTrack)
     {
         if (trackerMap[eventToTrack.trackerName])
         {
-            string serializedEvent = serializer.Serialize(eventToTrack.parameters);
-            persistence.Enqueue(serializedEvent);
+          
+            persistence.Enqueue(eventToTrack);
         }
     }
 
     // Eventos comunes a cualquier juego
-    public void TrackSessionStartEvent(string sessionId, string startTime)
+    public void TrackSessionStartEvent(string sessionId)
     {
+        StartTime = Time.time; // Guarda el tiempo de inicio en segundos
         var data = new Dictionary<string, object>
         {
             { "session_id", sessionId },
-            { "start_time", startTime }
+           
         };
 
         TrackEvent(new TrackerEvent(EventType.SessionStart.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
@@ -107,12 +66,25 @@ public class Tracker : MonoBehaviour
 
     public void TrackSessionEndEvent(string sessionId)
     {
+        float sessionDuration = Time.time - StartTime;
         var data = new Dictionary<string, object>
         {
             { "session_id", sessionId },
-            { "end_time", System.DateTime.Now.ToString("o") }
+            { "session_duration", sessionDuration.ToString("F2")}
         };
 
         TrackEvent(new TrackerEvent(EventType.SessionEnd.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
     }
+
+  
+
+
+
+
+
+
+
+
+
+
 }
