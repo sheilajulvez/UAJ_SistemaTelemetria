@@ -40,8 +40,6 @@ public class Tracker
         persistence.StartProcessing();
     }
 
-   
-
     public void TrackEvent(TrackerEvent eventToTrack)
     {
         if (trackerMap[eventToTrack.trackerName])
@@ -75,15 +73,6 @@ public class Tracker
 
         TrackEvent(new TrackerEvent(EventType.SessionEnd.ToString(), TrackerEventType.ProgressionTracker.ToString(), data));
     }
-
-  
-
-
-
-
-
-
-
 
 
 

@@ -9,7 +9,6 @@ public enum EventType
     SessionEnd,
     LevelStart,
     LevelEnd,
-    LevelProgress,
     Jump,
     Death,
     SlimeDeath,
