@@ -12,7 +12,7 @@ sys.stdout = buffer
 
 def cargar_multiples_trazas(carpeta):
     dataframes = []
-    session_id = 1 
+    session_n = 1 
 
     for archivo in os.listdir(carpeta):
         if archivo.endswith('.json') or archivo.endswith('.jsonl'):
@@ -22,9 +22,9 @@ def cargar_multiples_trazas(carpeta):
                 datos = [json.loads(linea) for linea in lineas if linea.strip()]
                 df = pd.DataFrame(datos)
                 df['archivo'] = archivo
-                df['session_id'] = session_id
+                df['session_n'] = session_n
                 dataframes.append(df)
-                session_id += 1
+                session_n += 1
     return pd.concat(dataframes, ignore_index=True)
 
 def analizar(df):
@@ -40,72 +40,32 @@ def analizar(df):
     numero_de_sesiones = len(df[df['event_type'] == 'SessionStart'])
 
 
-    saltos = df[df['event_type'] == 'Jump']
-    print(f"Total de saltos: {len(saltos)}")
-    if (len(saltos) / numero_de_sesiones) < config["min_saltos"]:
-        print('Pocos saltos: puede indicar falta de interacciones.')
-    elif (len(saltos) / numero_de_sesiones) > config["max_saltos"]:
-        print('Muchos saltos: jugador activo o nivel largo.')
-    else:
-        print('Cantidad moderada de saltos: ritmo de juego equilibrado.')
+    ends = df[df['event_type'] == 'LevelEnd']
+    print(f"Total de niveles completados: {len(ends)}")
+    if (len(ends) / numero_de_sesiones) >= config["numero_niveles"]:
+        print(f"Todos los jugadores han completado los {config["numero_niveles"]} niveles")
+    elif (len(ends) / numero_de_sesiones) < config["numero_niveles"]:
+        print(f"Algún jugador no ha conseguido superar los {config["numero_niveles"]} niveles.")
 
 
     print(f"\n---\n")
 
 
-    muertes = df[df['event_type'] == 'Death']
-    print(f"Total de muertes: {len(muertes)}")
-    if not muertes.empty and 'death_type' in muertes:
-        print(muertes['death_type'].value_counts())
-    if len(muertes) == 0:
-        print('¡No hubo muertes! El nivel puede ser demasiado fácil.')
-    elif muertes['death_type'].value_counts().max() > config["max_muertes"]:
-        print('Hay una causa de muerte predominante que conviene revisar.')
-    else:
-        print('Distribución equilibrada de causas de muerte.')
+    pauses = df[df['event_type'] == 'Pause']
+    print(f"Total de pausas entre las {numero_de_sesiones} sesiones: {len(pauses)}")
+    print(f"Número de pausas por nivel: {((len(pauses) / numero_de_sesiones) / float(config["numero_niveles"]))}")
 
 
-    print(f"\n---\n") 
+    print(f"\n---\n")
 
 
-    level_end = df[df['event_type'] == 'LevelEnd'].copy()
-
-    if not level_end.empty:
-        if 'session_id' in level_end.columns:
-            tiempos_por_sesion = []
-
-            for session_id, grupo in level_end.groupby('session_id'):
-                grupo = grupo.copy()
-
-                # Convertir level_time a float si es string
-                if grupo['level_time'].dtype == 'object':
-                    grupo['level_time'] = grupo['level_time'].str.replace(",", ".", regex=False).astype(float)
-
-                if not grupo['level_time'].dropna().empty:
-                    tiempo_total = grupo['level_time'].max()
-                    niveles_completados = grupo.shape[0]
-                    promedio_sesion = tiempo_total / niveles_completados
-                    tiempos_por_sesion.append(promedio_sesion)
-
-                    print(f"Sesión {session_id}: {niveles_completados} niveles, {tiempo_total:.2f}s totales → promedio: {promedio_sesion:.2f}s")
-
-            if tiempos_por_sesion:
-                promedio_general = sum(tiempos_por_sesion) / len(tiempos_por_sesion)
-                print(f"\nDuración media por nivel: {promedio_general:.2f} segundos")
-
-                if promedio_general < config["tiempo_nivel_rapido"]:
-                    print('Los niveles se están completando muy rápido.')
-                elif promedio_general > config["tiempo_nivel_lento"]:
-                    print('Los niveles tardan demasiado en completarse.')
-                else:
-                    print('Tiempo adecuado para mantener atención y reto.')
-            else:
-                print("No hay datos suficientes para calcular el promedio general.")
-        else:
-            print("Falta la columna 'session_id' para calcular duración por sesión.")
-    else:
-        print("No se completó ni un solo nivel.")
-
+    muertesFall = df[df['event_type'] == 'FallDeath']
+    muertesSpike = df[df['event_type'] == 'SpikeDeath']
+    muertesSlime = df[df['event_type'] == 'SlimeDeath']
+    print(f"Total de muertes entre las {numero_de_sesiones} sesiones: {len(muertesSpike) + len(muertesFall) + len(muertesSlime)}")
+    print(f"Muertes por caida: {len(muertesFall)}")
+    print(f"Muertes por pincho: {len(muertesSpike)}")
+    print(f"Muertes por slime: {len(muertesSlime)}")
 
 
     print(f"\n---\n")
@@ -113,12 +73,12 @@ def analizar(df):
     if numero_de_sesiones > 0:
         duraciones = []
 
-        for session_id, grupo in df.groupby('session_id'):
+        for session_n, grupo in df.groupby('session_n'):
             inicio = grupo['event_timestamp'].min()
             fin = grupo['event_timestamp'].max()
             duracion = (fin - inicio).total_seconds()
             duraciones.append(duracion)
-            print(f"Tiempo jugado en sesión {session_id}: {duracion:.2f} segundos")
+            print(f"Tiempo jugado en sesión {session_n}: {duracion:.2f} segundos")
 
         if duraciones:
             promedio = sum(duraciones) / len(duraciones)
